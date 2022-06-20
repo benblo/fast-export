@@ -60,9 +60,9 @@ def get_tags(ui,repo,marks_cache,mapping_cache,max):
   for tag,node in l:
     if tag==b'tip': continue
     rev=int(mapping_cache[hexlify(node)])
-    cache_sha1=marks_cache.get(b"%d" % (int(rev)+1))
+    cache_sha1 = marks_cache.get(b"%d" % (rev + 1))
     _,_,user,(_,_),_,desc,branch,_=get_changeset(ui,repo,rev)
-    if int(rev)>int(max):
+    if rev > int(max):
       bad.append([tag,branch,cache_sha1,rev,desc.split(b'\n')[0],user])
     else:
       good.append([tag,branch,cache_sha1,rev,desc.split(b'\n')[0],user])

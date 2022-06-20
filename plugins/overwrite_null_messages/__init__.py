@@ -3,10 +3,7 @@ def build_filter(args):
 
 class Filter:
     def __init__(self, args):
-        if args == '':
-            message = b'<empty commit message>'
-        else:
-            message = args.encode('utf8')
+        message = b'<empty commit message>' if args == '' else args.encode('utf8')
         self.message = message
 
     def commit_message_filter(self,commit_data):

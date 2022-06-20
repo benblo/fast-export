@@ -150,7 +150,7 @@ class ExportDriver:
     def run_with_drop(self, *plugin_args):
         cmd = [self.script, '-r', str(self.sourcedir)]
         for arg in plugin_args:
-            cmd.extend(['--plugin', 'drop=' + arg])
+            cmd.extend(['--plugin', f'drop={arg}'])
         output = subprocess.DEVNULL if self.quiet else None
         subprocess.run(cmd, check=True, cwd=str(self.targetdir),
                        env={'PYTHON': self.python_executable},
@@ -209,8 +209,7 @@ class GitDriver:
 
     def details(self, commit_hash):
         fmt = '%s%n%P'
-        output = self.run_command('show', '-s', '--format=' + fmt,
-                                  commit_hash)
+        output = self.run_command('show', '-s', f'--format={fmt}', commit_hash)
         subject, parents = output.splitlines()
         return subject, parents.split()
 

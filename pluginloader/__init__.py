@@ -9,11 +9,13 @@ def get_plugin(name, plugin_path):
         search_dirs = [plugin_path] + search_dirs
     for dir in search_dirs:
         location = os.path.join(dir, name)
-        if not os.path.isdir(location) or not MainModule + ".py" in os.listdir(location):
+        if not os.path.isdir(location) or f"{MainModule}.py" not in os.listdir(
+            location
+        ):
             continue
         info = imp.find_module(MainModule, [location])
         return {"name": name, "info": info, "path": location}
-    raise Exception("Could not find plugin with name " + name)
+    raise Exception(f"Could not find plugin with name {name}")
 
 def load_plugin(plugin):
     return imp.load_module(MainModule, *plugin["info"])
