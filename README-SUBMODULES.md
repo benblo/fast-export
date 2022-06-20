@@ -18,9 +18,9 @@ subrepositories have been converted, a mapping file that maps the mercurial
 subrepository path to a converted git submodule path must be created. The
 format for this file is:
 
-"<mercurial subrepo path>"="<git submodule path>"
-"<mercurial subrepo path2>"="<git submodule path2>"
-...
+    "<mercurial subrepo path>"="<git submodule path>"
+    "<mercurial subrepo path2>"="<git submodule path2>"
+    ...
 
 The path of this mapping file is then provided with the --subrepo-map
 command line option.
@@ -28,12 +28,14 @@ command line option.
 ## Example
 
 Example mercurial repo folder structure (~/mercurial) containing two subrepos:
+
     src/...
     subrepos/subrepo1
     subrepos/subrepo2
 
 ### Setup
 Create an empty new folder where all the converted git modules will be imported:
+
     mkdir ~/imported-gits
     cd ~/imported-gits
 
