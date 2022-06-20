@@ -17,13 +17,13 @@ PY2 = sys.version_info.major == 2
 if PY2:
   str = unicode
 
-if PY2 and sys.platform == "win32":
-  # On Windows, sys.stdout is initially opened in text mode, which means that
-  # when a LF (\n) character is written to sys.stdout, it will be converted
-  # into CRLF (\r\n).  That makes git blow up, so use this platform-specific
-  # code to change the mode of sys.stdout to binary.
-  import msvcrt
-  msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+  if sys.platform == "win32":
+    # On Windows, sys.stdout is initially opened in text mode, which means that
+    # when a LF (\n) character is written to sys.stdout, it will be converted
+    # into CRLF (\r\n).  That makes git blow up, so use this platform-specific
+    # code to change the mode of sys.stdout to binary.
+    import msvcrt
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
 # silly regex to catch Signed-off-by lines in log message
 sob_re=re.compile(b'^Signed-[Oo]ff-[Bb]y: (.+)$')
@@ -76,7 +76,7 @@ def split_dict(dleft,dright,l=[],c=[],r=[],match=file_mismatch):
   """Loop over our repository and find all changed and missing files."""
   for left in dleft.keys():
     right=dright.get(left,None)
-    if right==None:
+    if right is None:
       # we have the file but our parent hasn't: add to left set
       l.append(left)
     elif match(dleft[left],right) or gitmode(dleft.flags(left))!=gitmode(dright.flags(left)):
@@ -84,10 +84,10 @@ def split_dict(dleft,dright,l=[],c=[],r=[],match=file_mismatch):
       c.append(left)
   for right in dright.keys():
     left=dleft.get(right,None)
-    if left==None:
+    if left is None:
       # if parent has file but we don't: add to right set
       r.append(right)
-    # change is already handled when comparing child against parent
+      # change is already handled when comparing child against parent
   return l,c,r
 
 def get_filechanges(repo,revision,parents,mleft):
@@ -130,13 +130,12 @@ def get_author(logmessage,committer,authors):
     first=None
     while i>=0:
       m=sob_re.match(loglines[i])
-      if m==None: break
+      if m is None: break
       first=m
       i-=1
     # if the last non-empty line matches our Signed-Off-by regex: extract username
     if first!=None:
-      r=fixup_user(first.group(1),authors)
-      return r
+      return fixup_user(first.group(1),authors)
   return committer
 
 def remove_gitmodules(ctx):
@@ -160,7 +159,7 @@ def refresh_hg_submodule(name,subrepo_info):
   gitRepoLocation=submodule_mappings[name] + b"/.git"
 
   # Populate the cache to map mercurial revision to git revision
-  if not name in subrepo_cache:
+  if name not in subrepo_cache:
     subrepo_cache[name]=(load_cache(gitRepoLocation+b"/hg2git-mapping"),
                          load_cache(gitRepoLocation+b"/hg2git-marks",
                                     lambda s: int(s)-1))
@@ -205,17 +204,14 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   max=len(files)
   is_submodules_refreshed=False
   for file in files:
-    if not is_submodules_refreshed and (file==b'.hgsub' or file==b'.hgsubstate'):
+    if not is_submodules_refreshed and file in [b'.hgsub', b'.hgsubstate']:
       is_submodules_refreshed=True
       refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == b".hgtags":
       stderr_buffer.write(b'Skip %s\n' % file)
       continue
-    if encoding:
-      filename=file.decode(encoding).encode('utf8')
-    else:
-      filename=file
+    filename = file.decode(encoding).encode('utf8') if encoding else file
     if b'.git' in filename.split(b'/'): # Even on Windows, the path separator is / here.
       stderr_buffer.write(
         b'Ignoring file %s which cannot be tracked by git\n' % filename
@@ -260,7 +256,7 @@ def sanitize_name(name,what="branch", mapping={}):
 
   def dot(name):
     if not name: return name
-    if name[0:1] == b'.': return b'_'+name[1:]
+    if name[:1] == b'.': return b'_'+name[1:]
     return name
 
   if not auto_sanitize:
@@ -280,9 +276,7 @@ def sanitize_name(name,what="branch", mapping={}):
   return n
 
 def strip_leading_slash(filename):
-  if filename[0:1] == b'/':
-    return filename[1:]
-  return filename
+  return filename[1:] if filename[:1] == b'/' else filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
                   branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',
@@ -408,7 +402,7 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
     rev=int(mapping_cache[hexlify(node)])
 
     ref=revnum_to_revref(rev, old_marks)
-    if ref==None:
+    if ref is None:
       stderr_buffer.write(
         b'Failed to find reference for creating tag %s at r%d\n' % (tag, rev)
       )
@@ -427,7 +421,7 @@ def load_mapping(name, filename, mapping_is_raw):
 
   def parse_raw_line(line):
     m=raw_regexp.match(line)
-    if m==None:
+    if m is None:
       return None
     return (m.group(1).strip(), m.group(2).strip())
 
@@ -440,9 +434,9 @@ def load_mapping(name, filename, mapping_is_raw):
 
   def parse_quoted_line(line):
     m=quoted_regexp.match(line)
-    if m==None:
+    if m is None:
       return 
-    
+
     return (process_unicode_escape_sequences(m.group(1)),
             process_unicode_escape_sequences(m.group(5)))
 
@@ -481,9 +475,10 @@ def branchtip(repo, heads):
   return tip
 
 def verify_heads(ui,repo,cache,force,ignore_unnamed_heads,branchesmap):
-  branches={}
-  for bn, heads in repo.branchmap().iteritems():
-    branches[bn] = branchtip(repo, heads)
+  branches = {
+      bn: branchtip(repo, heads)
+      for bn, heads in repo.branchmap().iteritems()
+  }
   l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
   l.sort()
 

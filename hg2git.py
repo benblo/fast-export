@@ -30,7 +30,7 @@ user_clean_re=re.compile(b'^["]([^"]+)["]$')
 
 def set_default_branch(name):
   global cfg_master
-  cfg_master = name.encode('utf8') if not isinstance(name, bytes) else name
+  cfg_master = name if isinstance(name, bytes) else name.encode('utf8')
 
 def set_origin_name(name):
   global origin_name
@@ -53,7 +53,7 @@ def fixup_user(user,authors):
     # by defaulting to the current value of 'user'
     user=authors.get(user,user)
   name,mail,m=b'',b'',user_re.match(user)
-  if m==None:
+  if m is None:
     # if we don't have 'Name <mail>' syntax, extract name
     # and mail from hg helpers. this seems to work pretty well.
     # if email doesn't contain @, replace it with devnull@localhost
@@ -74,7 +74,7 @@ def fixup_user(user,authors):
 def get_branch(name):
   # 'HEAD' is the result of a bug in mutt's cvs->hg conversion,
   # other CVS imports may need it, too
-  if name==b'HEAD' or name==b'default' or name==b'':
+  if name in [b'HEAD', b'default', b'']:
     name=cfg_master
   if origin_name:
     return origin_name + b'/' + name
@@ -105,37 +105,35 @@ def load_cache(filename,get_key=mangle_key):
   cache={}
   if not os.path.exists(filename):
     return cache
-  f=open(filename,'rb')
-  l=0
-  for line in f.readlines():
-    l+=1
-    fields=line.split(b' ')
-    if fields==None or not len(fields)==2 or fields[0][0:1]!=b':':
-      sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
-      continue
-    # put key:value in cache, key without ^:
-    cache[get_key(fields[0][1:])]=fields[1].split(b'\n')[0]
-  f.close()
+  with open(filename,'rb') as f:
+    l=0
+    for line in f.readlines():
+      l+=1
+      fields=line.split(b' ')
+      if fields is None or len(fields) != 2 or fields[0][:1] != b':':
+        sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
+        continue
+      # put key:value in cache, key without ^:
+      cache[get_key(fields[0][1:])]=fields[1].split(b'\n')[0]
   return cache
 
 def save_cache(filename,cache):
-  f=open(filename,'wb')
-  for key, value in cache.items():
-    if not isinstance(key, bytes):
-      key = str(key).encode('utf8')
-    if not isinstance(value, bytes):
-      value = str(value).encode('utf8')
-    f.write(b':%s %s\n' % (key, value))
-  f.close()
+  with open(filename,'wb') as f:
+    for key, value in cache.items():
+      if not isinstance(key, bytes):
+        key = str(key).encode('utf8')
+      if not isinstance(value, bytes):
+        value = str(value).encode('utf8')
+      f.write(b':%s %s\n' % (key, value))
 
 def get_git_sha1(name,type='heads'):
   try:
     # use git-rev-parse to support packed refs
-    ref="refs/%s/%s" % (type,name.decode('utf8'))
+    ref = f"refs/{type}/{name.decode('utf8')}"
     l=subprocess.check_output(["git", "rev-parse", "--verify",
                                "--quiet", ref.encode('utf8')])
-    if l == None or len(l) == 0:
+    if l is None or len(l) == 0:
       return None
-    return l[0:40]
+    return l[:40]
   except subprocess.CalledProcessError:
     return None

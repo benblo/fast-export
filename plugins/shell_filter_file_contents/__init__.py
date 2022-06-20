@@ -22,7 +22,6 @@ class Filter:
         except:
             sys.stderr.write('Running filter-contents %s:\n' % filter_cmd)
             raise
-        filter_ret = filter_proc.poll()
-        if filter_ret:
+        if filter_ret := filter_proc.poll():
             raise subprocess.CalledProcessError(filter_ret, filter_cmd)
         file_data['data'] = d
