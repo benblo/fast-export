@@ -26,6 +26,8 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 GFI_OPTS=""
+GFI_OPTS="$GFI_OPTS --active-branches=20" # default is 5
+GFI_OPTS="$GFI_OPTS --big-file-threshold=2048m" # default is 5
 
 if [ -z "${PYTHON}" ]; then
     # $PYTHON is not set, so we try to find a working python with mercurial:
